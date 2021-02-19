@@ -1,3 +1,6 @@
+1.2.1:
+- Update marketplace icon.
+
 1.2:
 - Add 'Job queue batch' option, to make the jQueueBatchSize configurable.
 - Add help dialog on settings page.
