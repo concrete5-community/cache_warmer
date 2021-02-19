@@ -1,4 +1,4 @@
-<?php  
+<?php 
 namespace Concrete\Package\CacheWarmer\Controller\SinglePage\Dashboard\System\Optimization;
 
 use Concrete\Core\Http\ResponseAssetGroup;

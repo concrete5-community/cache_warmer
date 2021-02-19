@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Concrete\Package\CacheWarmer\Job;
 
 use Concrete\Core\Cache\Page\PageCache;

@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Concrete\Package\CacheWarmer;
 
 use Exception;
@@ -11,7 +11,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.0.1';
+    protected $pkgVersion = '1.0.2';
 
     protected $single_pages = array(
         '/dashboard/system/optimization/cache_warmer' => array(
@@ -31,10 +31,6 @@ class Controller extends Package
 
     public function install()
     {
-        if (version_compare(PHP_VERSION, '7.0', '>=')) {
-            throw new Exception(t("Due to a bug in the core this add-on won't work on PHP 7 and higher."));
-        }
-
         $pkg = parent::install();
 
         Job::installByPackage('cache_warmer', $pkg);
