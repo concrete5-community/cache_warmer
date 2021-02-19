@@ -155,13 +155,20 @@ class CacheWarmer extends QueueableJob
     protected function cachePage($page)
     {
         $fh = Core::make('helper/file');
-        $path = $page->getCollectionLink(true);
+        $url = $page->getCollectionLink(true);
 
-        // This is the C5 wrapper for cURL
-        $page_content = $fh->getContents($path);
+        $urlParsed = @parse_url($url);
+        if (!isset($urlParsed['scheme'])) {
+            // An URL without scheme (e.g. '/' shouldn't be processed.
+            // getCollectionLink should always return a full URL.
+            return;
+        }
 
-        if (empty($page_content)) {
-            $msg = t("Cache file couldn't be created for '%s'", $path);
+        // This is a C5 wrapper for cURL
+        $pageContent = $fh->getContents($url);
+
+        if (empty($pageContent)) {
+            $msg = t(/* %s is the url of the page */"Page %s returned nothing. A cache file could probably not be created.", $url);
             Log::addError($msg);
         }
     }

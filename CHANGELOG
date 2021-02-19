@@ -1,3 +1,7 @@
+1.2.3:
+- Prevent processing urls / pages without a scheme.
+- Change error message when page is empty.
+
 1.2.2:
 - Add install notes and post install screen.
 
