@@ -11,12 +11,12 @@ class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.0';
+    protected $pkgVersion = '1.0.1';
 
     protected $single_pages = array(
         '/dashboard/system/optimization/cache_warmer' => array(
-            'cName' => 'Cache Warmer'
-        )
+            'cName' => 'Cache Warmer',
+        ),
     );
 
     public function getPackageName()
@@ -28,7 +28,6 @@ class Controller extends Package
     {
         return t("Generates cache files to reduce load times.");
     }
-
 
     public function install()
     {
@@ -43,10 +42,8 @@ class Controller extends Package
         $this->installPages($pkg);
     }
 
-
     /**
      * @param Package $pkg
-     * @return void
      */
     protected function installPages($pkg)
     {

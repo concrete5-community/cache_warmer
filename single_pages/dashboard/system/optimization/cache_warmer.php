@@ -1,19 +1,19 @@
-<?php   
+<?php  
 defined('C5_EXECUTE') or die('Access Denied.');
 
 $page_types = array();
 $all_page_types = \PageType::getList();
 if ($all_page_types) {
-	foreach ($all_page_types as $pt) {
-		$page_types[$pt->getPageTypeID()] = $pt->getPageTypeName();
-	}
+    foreach ($all_page_types as $pt) {
+        $page_types[$pt->getPageTypeID()] = $pt->getPageTypeName();
+    }
 }
 
 $page_type_id = array();
 if ($selected_page_types) {
-	foreach ($selected_page_types as $pt) {
-		$page_type_id[] = $pt->getPageTypeID();
-	}
+    foreach ($selected_page_types as $pt) {
+        $page_type_id[] = $pt->getPageTypeID();
+    }
 }
 $token = \Core::make('token');
 ?>
@@ -34,6 +34,8 @@ $token = \Core::make('token');
 			<?php echo $form->selectMultiple('page_type_id', $page_types, $page_type_id, array('style' => 'width: 100%'))?>
 		</div>
 	</div>
+
+	<?php  echo t('To run Cache Warmer, go to <a href="%s">Automated Tasks</a>.', URL::to('/dashboard/system/optimization/jobs')); ?>
 	
 	<div class="ccm-dashboard-form-actions-wrapper">
 		<div class="ccm-dashboard-form-actions">
