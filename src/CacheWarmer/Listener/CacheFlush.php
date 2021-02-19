@@ -6,7 +6,7 @@ use Concrete\Core\Config\Repository\Repository;
 use Concrete\Core\Logging\Logger;
 use Exception;
 
-class PageOutput
+class CacheFlush
 {
     /**
      * @var Repository

@@ -1,3 +1,6 @@
+2.1.1
+- Fix issue that on_cache_flush was not hooked into.
+
 2.1.0
 - Keep track of when the cache is flushed. If the cache is flushed, a config flag is set.
 Next time the job runs, it will check if rewarming is needed. With this approach it's possible

@@ -2,6 +2,7 @@
 
 namespace Concrete\Package\CacheWarmer;
 
+use A3020\CacheWarmer\Listener\CacheFlush;
 use Concrete\Core\Job\Job;
 use Concrete\Core\Package\Package;
 use Concrete\Core\Page\Page;
@@ -11,7 +12,7 @@ final class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '8.3.1';
-    protected $pkgVersion = '2.1.0';
+    protected $pkgVersion = '2.1.1';
     protected $pkgAutoloaderRegistries = [
         'src/CacheWarmer' => '\A3020\CacheWarmer',
     ];
@@ -24,6 +25,15 @@ final class Controller extends Package
     public function getPackageDescription()
     {
         return t('Generates cache files to reduce load times.');
+    }
+
+    public function on_start()
+    {
+        $this->app['director']->addListener('on_cache_flush', function($event) {
+            /** @var \A3020\CacheWarmer\Listener\CacheFlush $listener */
+            $listener = $this->app->make(CacheFlush::class);
+            $listener->handle($event);
+        });
     }
 
     public function install()
