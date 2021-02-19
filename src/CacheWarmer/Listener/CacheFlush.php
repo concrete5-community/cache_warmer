@@ -2,23 +2,23 @@
 
 namespace A3020\CacheWarmer\Listener;
 
-use Concrete\Core\Config\Repository\Repository;
-use Concrete\Core\Logging\Logger;
 use Exception;
+use Concrete\Core\Config\Repository\Repository;
+use Psr\Log\LoggerInterface;
 
 class CacheFlush
 {
     /**
-     * @var Repository
+     * @var \Concrete\Core\Config\Repository\Repository
      */
     private $config;
 
     /**
-     * @var Logger
+     * @var \Psr\Log\LoggerInterface
      */
     private $logger;
 
-    public function __construct(Repository $config, Logger $logger)
+    public function __construct(Repository $config, LoggerInterface $logger)
     {
         $this->config = $config;
         $this->logger = $logger;
@@ -35,7 +35,7 @@ class CacheFlush
             // Next time the CLI job runs via CLI, it'll check this value.
             $this->config->save('cache_warmer.settings.needs_rewarm', true);
         } catch (Exception $e) {
-            $this->logger->addDebug($e->getMessage());
+            $this->logger->debug($e->getMessage());
         }
     }
 }

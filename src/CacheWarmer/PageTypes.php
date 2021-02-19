@@ -8,7 +8,7 @@ use Concrete\Core\Page\Type\Type;
 class PageTypes
 {
     /**
-     * @var Repository
+     * @var \Concrete\Core\Config\Repository\Repository
      */
     private $config;
 
@@ -31,7 +31,7 @@ class PageTypes
     }
 
     /**
-     * @return Type[]
+     * @return \Concrete\Core\Page\Type\Type[]
      */
     public function getSelectedPageTypes()
     {

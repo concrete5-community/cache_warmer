@@ -3,6 +3,7 @@
 namespace Concrete\Package\CacheWarmer;
 
 use A3020\CacheWarmer\Listener\CacheFlush;
+use A3020\CacheWarmer\Listener\CacheWarmerNeedsRewarm;
 use Concrete\Core\Job\Job;
 use Concrete\Core\Package\Package;
 use Concrete\Core\Page\Page;
@@ -12,7 +13,7 @@ final class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '8.3.1';
-    protected $pkgVersion = '2.1.1';
+    protected $pkgVersion = '2.1.3';
     protected $pkgAutoloaderRegistries = [
         'src/CacheWarmer' => '\A3020\CacheWarmer',
     ];
@@ -32,6 +33,12 @@ final class Controller extends Package
         $this->app['director']->addListener('on_cache_flush', function($event) {
             /** @var \A3020\CacheWarmer\Listener\CacheFlush $listener */
             $listener = $this->app->make(CacheFlush::class);
+            $listener->handle($event);
+        });
+
+        $this->app['director']->addListener('on_cache_warmer_needs_rewarm', function($event) {
+            /** @var \A3020\CacheWarmer\Listener\CacheWarmerNeedsRewarm $listener */
+            $listener = $this->app->make(CacheWarmerNeedsRewarm::class);
             $listener->handle($event);
         });
     }

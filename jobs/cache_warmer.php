@@ -11,10 +11,10 @@ use Concrete\Core\Console\ConsoleAwareInterface;
 use Concrete\Core\Console\ConsoleAwareTrait;
 use Concrete\Core\File\Service\File;
 use Concrete\Core\Job\QueueableJob;
-use Concrete\Core\Logging\Logger;
 use Concrete\Core\Page\Page;
 use Concrete\Core\Page\PageList;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use ZendQueue\Message as ZendQueueMessage;
 use ZendQueue\Queue as ZendQueue;
@@ -159,7 +159,7 @@ class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
                 return;
             }
         } catch (Exception $e) {
-            $this->appInstance->make(Logger::class)->addError($e->getMessage());
+            $this->appInstance->make(LoggerInterface::class)->error($e->getMessage());
             return;
         }
 
@@ -252,7 +252,7 @@ class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
 
         if (empty($pageContent)) {
             $msg = t(/* %s is the url of the page */"Page %s returned nothing. A cache file could probably not be created.", $url);
-            $this->appInstance->make(Logger::class)->addError($msg);
+            $this->appInstance->make(LoggerInterface::class)->error($msg);
         }
     }
 
