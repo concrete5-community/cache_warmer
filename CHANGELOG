@@ -1,3 +1,8 @@
+2.1.0
+- Keep track of when the cache is flushed. If the cache is flushed, a config flag is set.
+Next time the job runs, it will check if rewarming is needed. With this approach it's possible
+to set up Cache Warmer as a cron job that runs every minute, making sure your pages are always fast!
+
 2.0.0
 - Modernize codebase / refactoring.
 - Change minimum required version to 8.3.1.

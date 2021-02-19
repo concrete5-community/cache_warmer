@@ -78,6 +78,17 @@ class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
             if (empty($this->getCanonicalUrl())) {
                 throw new Exception("Please configure a canonical URL in order to run this job via CLI.");
             }
+
+            /** @var Repository $config */
+            $config = $this->appInstance->make(Repository::class);
+            if ($config->get('cache_warmer.settings.needs_rewarm', true) === true) {
+                // OK, Cache Warmer will do it's job... but first, let's set it to false
+                // so that it doesn't keep running if the job is set up e.g. as a minutely cron job.
+                $config->save('cache_warmer.settings.needs_rewarm', false);
+            } else {
+                $this->traitOutput->writeln(t("The cache hasn't been flushed, so rewarming is currently not needed."));
+                return;
+            }
         }
 
         /** @var Repository $config */
@@ -182,7 +193,7 @@ class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
     {
         $this->progressBar->clear();
 
-        return t('Cache Warmer completed');
+        return t('%s ran successfully', t('Cache Warmer'));
     }
 
     public function getJobQueueBatchSize()
