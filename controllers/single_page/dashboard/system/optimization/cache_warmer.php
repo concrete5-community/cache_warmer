@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 namespace Concrete\Package\CacheWarmer\Controller\SinglePage\Dashboard\System\Optimization;
 
 use Concrete\Core\Http\ResponseAssetGroup;
@@ -27,9 +28,7 @@ class CacheWarmer extends DashboardPageController
             return;
         }
 
-        /*
-         * Make sure we're working with integers only.
-         */
+        // Make sure we're working with integers only
         $page_types = $this->post('page_type_id');
         if ($page_types && is_array($page_types)) {
             foreach ($page_types as $index => $page_type) {
@@ -37,9 +36,9 @@ class CacheWarmer extends DashboardPageController
                 $page_types[$index] = $page_type_id;
             }
         }
-        $max_pages = filter_var($this->post('max_pages'), FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
 
-        Config::save('cache_warmer.settings.max_pages',  $max_pages);
+        Config::save('cache_warmer.settings.job_queue_batch',  (int) $this->post('job_queue_batch'));
+        Config::save('cache_warmer.settings.max_pages',  (int) $this->post('max_pages'));
         Config::save('cache_warmer.settings.page_types', $page_types);
 
         $this->redirect($this->action('save_success'));

@@ -1,3 +1,8 @@
+1.2:
+- Add 'Job queue batch' option, to make the jQueueBatchSize configurable.
+- Add help dialog on settings page.
+- Remove unused code. Clean up.
+
 1.1:
 - v8 compatibility with PageCacheRecord class.
 - Code clean up.

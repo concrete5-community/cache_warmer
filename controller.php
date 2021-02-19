@@ -1,4 +1,5 @@
 <?php
+
 namespace Concrete\Package\CacheWarmer;
 
 use Job;
@@ -10,13 +11,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.1';
-
-    protected $single_pages = array(
-        '/dashboard/system/optimization/cache_warmer' => array(
-            'cName' => 'Cache Warmer',
-        ),
-    );
+    protected $pkgVersion = '1.2';
 
     public function getPackageName()
     {
@@ -42,20 +37,14 @@ class Controller extends Package
      */
     protected function installPages($pkg)
     {
-        foreach ($this->single_pages as $path => $value) {
-            if (!is_array($value)) {
-                $path = $value;
-                $value = array();
-            }
+        $path = '/dashboard/system/optimization/cache_warmer';
 
-            $page = Page::getByPath($path);
-            if (!$page || $page->isError()) {
-                $single_page = SinglePage::add($path, $pkg);
-
-                if ($value) {
-                    $single_page->update($value);
-                }
-            }
+        $page = Page::getByPath($path);
+        if (!$page || $page->isError()) {
+            $single_page = SinglePage::add($path, $pkg);
+            $single_page->update(array(
+                'cName' => 'Cache Warmer',
+            ));
         }
     }
 }

@@ -11,7 +11,6 @@ use Package;
 use Page;
 use PageList;
 use QueueableJob;
-use ReflectionFunction;
 use ReflectionMethod;
 use ZendQueue\Message as ZendQueueMessage;
 use ZendQueue\Queue as ZendQueue;
@@ -36,7 +35,7 @@ class CacheWarmer extends QueueableJob
 
     public function __construct()
     {
-        $this->jQueueBatchSize = 5;
+        $this->jQueueBatchSize = $this->getJobQueueBatchSize();
         $this->cacheLibrary = PageCache::getLibrary();
     }
 
@@ -55,14 +54,6 @@ class CacheWarmer extends QueueableJob
         $pl = new PageList();
         $pl->sortBy('rand()');
         $pl->ignorePermissions();
-
-        /*
-         * Check if cache is disabled globally.
-         * If so, only retrieve pages that override the default cache setting.
-         */
-        if (Config::get('concrete.cache.pages') === false) {
-            //$pl->getQueryObject()->andWhere('p.cCacheFullPageContent = 1');
-        }
 
         /*
          * Filter by Page Type
@@ -183,5 +174,12 @@ class CacheWarmer extends QueueableJob
     public function finish(ZendQueue $q)
     {
         return t("Cache Warmer completed");
+    }
+
+    public function getJobQueueBatchSize()
+    {
+        $size = (int) Config::get('cache_warmer.settings.job_queue_batch');
+
+        return $size ? $size : 5;
     }
 }
