@@ -2,85 +2,78 @@
 
 namespace Concrete\Package\CacheWarmer\Controller\SinglePage\Dashboard\System\Optimization;
 
+use A3020\CacheWarmer\PageTypes;
+use Concrete\Core\Config\Repository\Repository;
 use Concrete\Core\Http\ResponseAssetGroup;
 use Concrete\Core\Page\Controller\DashboardPageController;
-use Concrete\Core\Page\Type\Type;
-use Config;
-use Core;
+use Concrete\Core\Routing\Redirect;
 
 class CacheWarmer extends DashboardPageController
 {
-    public function on_start()
+    public function on_before_render()
     {
         $ag = ResponseAssetGroup::get();
         $ag->requireAsset('select2');
 
-        $this->error = Core::make('helper/validation/error');
+        parent::on_before_render();
+    }
 
-        $this->set('selected_page_types', self::getSelectedPageTypes());
+    public function view()
+    {
+        $this->error = $this->app->make('helper/validation/error');
+
+        $this->set('jobQueueBatch', $this->getConfig()->get('cache_warmer.settings.job_queue_batch'));
+        $this->set('maxPages', $this->getConfig()->get('cache_warmer.settings.max_pages'));
+
+        /** @var PageTypes $pageTypes */
+        $pageTypes = $this->app->make(PageTypes::class);
+
+        $this->set('pageTypeOptions', $pageTypes->getPageTypeOptions());
+        $this->set('selectedPageTypeIds', $pageTypes->getSelectedPageTypeIds());
     }
 
     public function save()
     {
-        if (Core::make('token')->validate('cache_warmer.settings') == false) {
-            $this->error->add(Core::make('token')->getErrorMessage());
+        if (!$this->token->validate('cache_warmer.settings')) {
+            $this->flash('error', $this->token->getErrorMessage());
 
-            return;
+            return Redirect::to('/dashboard/system/optimization/cache_warmer');
         }
 
         // Make sure we're working with integers only
-        $page_types = $this->post('page_type_id');
-        if ($page_types && is_array($page_types)) {
-            foreach ($page_types as $index => $page_type) {
-                $page_type_id = filter_var($page_type, FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)));
-                $page_types[$index] = $page_type_id;
+        $pageTypeIds = $this->post('page_type_id');
+        if ($pageTypeIds && is_array($pageTypeIds)) {
+            foreach ($pageTypeIds as $index => $page_type) {
+                $page_type_id = filter_var($page_type, FILTER_VALIDATE_INT, [
+                    'options' => [
+                        'min_range' => 1,
+                    ],
+                ]);
+
+                $pageTypeIds[$index] = $page_type_id;
             }
         }
 
-        Config::save('cache_warmer.settings.job_queue_batch',  (int) $this->post('job_queue_batch'));
-        Config::save('cache_warmer.settings.max_pages',  (int) $this->post('max_pages'));
-        Config::save('cache_warmer.settings.page_types', $page_types);
+        $config = $this->getConfig();
 
-        $this->redirect($this->action('save_success'));
-    }
+        $queueBatch = (int) $this->post('job_queue_batch') > 0 ? (int) $this->post('job_queue_batch') : null;
+        $config->save('cache_warmer.settings.job_queue_batch', $queueBatch);
 
-    public function save_success()
-    {
-        $this->set('message', t('Settings saved'));
-    }
+        $maxPages = (int) $this->post('max_pages') > 0 ? (int) $this->post('max_pages') : null;
+        $config->save('cache_warmer.settings.max_pages', $maxPages);
 
-    /**
-     * @static
-     *
-     * @return array
-     */
-    public static function getSelectedPageTypes()
-    {
-        $types = Config::get('cache_warmer.settings.page_types');
-        if ($types && is_array($types)) {
-            foreach ($types as $index => $type_id) {
-                $type = Type::getByID($type_id);
-                if ($type) {
-                    $types[$index] = $type;
-                }
-            }
-        }
+        $config->save('cache_warmer.settings.page_types', $pageTypeIds);
 
-        return ($types) ? $types : array();
+        $this->flash('success', t('Settings have been saved'));
+
+        return Redirect::to('/dashboard/system/optimization/cache_warmer');
     }
 
     /**
-     * @static
-     *
-     * @return array
+     * @return Repository
      */
-    public static function getSelectedPageTypeHandles()
+    private function getConfig()
     {
-        $types = self::getSelectedPageTypes();
-        foreach ($types as $index => $type) {
-            $types[$index] = $type->getPageTypeHandle();
-        }
-
-        return $types;
+        return $this->app->make(Repository::class);
     }
 }

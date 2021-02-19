@@ -2,16 +2,19 @@
 
 namespace Concrete\Package\CacheWarmer;
 
-use Job;
-use Package;
-use Page;
-use SinglePage;
+use Concrete\Core\Job\Job;
+use Concrete\Core\Package\Package;
+use Concrete\Core\Page\Page;
+use Concrete\Core\Page\Single;
 
-class Controller extends Package
+final class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
-    protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.2.3';
+    protected $appVersionRequired = '8.3.1';
+    protected $pkgVersion = '2.0.0';
+    protected $pkgAutoloaderRegistries = [
+        'src/CacheWarmer' => '\A3020\CacheWarmer',
+    ];
 
     public function getPackageName()
     {
@@ -29,22 +32,22 @@ class Controller extends Package
 
         Job::installByPackage('cache_warmer', $pkg);
 
-        $this->installPages($pkg);
+        $this->installPage($pkg);
     }
 
     /**
-     * @param Package $pkg
+     * @param \Concrete\Core\Entity\Package $pkg
      */
-    protected function installPages($pkg)
+    protected function installPage($pkg)
     {
         $path = '/dashboard/system/optimization/cache_warmer';
 
         $page = Page::getByPath($path);
         if (!$page || $page->isError()) {
-            $single_page = SinglePage::add($path, $pkg);
-            $single_page->update(array(
+            $single_page = Single::add($path, $pkg);
+            $single_page->update([
                 'cName' => 'Cache Warmer',
-            ));
+            ]);
         }
     }
 }

@@ -1,7 +1,5 @@
 <?php
-
 defined('C5_EXECUTE') or die('Access Denied.');
-
 ?>
 
 <label for="acceptTerms" style="margin-bottom: 30px;">
@@ -12,15 +10,15 @@ defined('C5_EXECUTE') or die('Access Denied.');
     ?>
 </label>
 
-<div class="alert alert-danger" id="consent">
+<div class="alert alert-warning" id="consent">
     <i class="fa fa-warning"></i>
     <strong>
-    <?php
-    echo "Only use this add-on if you've been given a free license or if you've bought a license. ";
-    ?>
+        <?php
+        echo "Only use this add-on if you've been given a free license or if you've bought a license. ";
+        ?>
     </strong>
-    <?php
 
+    <?php
     echo sprintf("Please note that the %sconcrete5 add-on license%s is per website.",
         '<a style="color: inherit; text-decoration: underline;" href="https://www.concrete5.org/help/legal/commercial_add-on_license/" target="_blank">',
         '</a>'

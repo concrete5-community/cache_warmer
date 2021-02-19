@@ -1,28 +1,33 @@
-1.2.3:
+2.0.0
+- Modernize codebase / refactoring.
+- Change minimum required version to 8.3.1.
+- Add CLI mode support with progress bar.
+
+1.2.3
 - Prevent processing urls / pages without a scheme.
 - Change error message when page is empty.
 
-1.2.2:
+1.2.2
 - Add install notes and post install screen.
 
-1.2.1:
+1.2.1
 - Update marketplace icon.
 
-1.2:
+1.2
 - Add 'Job queue batch' option, to make the jQueueBatchSize configurable.
 - Add help dialog on settings page.
 - Remove unused code. Clean up.
 
-1.1:
+1.1
 - v8 compatibility with PageCacheRecord class.
 - Code clean up.
 
-1.0.2:
+1.0.2
 - Allow installation on PHP 7.
 
-1.0.1:
+1.0.1
 - Added link on Settings page to Automated Jobs.
 - PSR fixes.
 
-1.0:
+1.0
 - Approved by PRB.

@@ -1,42 +1,63 @@
 <?php
+
 namespace Concrete\Package\CacheWarmer\Job;
 
+use A3020\CacheWarmer\PageTypes;
+use Concrete\Core\Application\Application;
 use Concrete\Core\Cache\Page\PageCache;
 use Concrete\Core\Cache\Page\PageCacheRecord;
-use Concrete\Core\Support\Facade\Log;
-use Concrete\Package\CacheWarmer\Controller\SinglePage\Dashboard\System\Optimization\CacheWarmer as CacheWarmerController;
-use Config;
-use Core;
-use Package;
-use Page;
-use PageList;
-use QueueableJob;
-use ReflectionMethod;
+use Concrete\Core\Config\Repository\Repository;
+use Concrete\Core\Console\ConsoleAwareInterface;
+use Concrete\Core\Console\ConsoleAwareTrait;
+use Concrete\Core\File\Service\File;
+use Concrete\Core\Job\QueueableJob;
+use Concrete\Core\Logging\Logger;
+use Concrete\Core\Page\Page;
+use Concrete\Core\Page\PageList;
+use Exception;
+use Symfony\Component\Console\Helper\ProgressBar;
 use ZendQueue\Message as ZendQueueMessage;
 use ZendQueue\Queue as ZendQueue;
 
-class CacheWarmer extends QueueableJob
+class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
 {
+    use ConsoleAwareTrait;
+
+    /**
+     * * Not named 'app' because the parent class might change
+     *
+     * @var \Concrete\Core\Application\Application
+     */
+    private $appInstance;
+
+    /** @var ProgressBar */
+    protected $progressBar;
+
+    /** @var PageCache */
     protected $cacheLibrary;
+
+    public function __construct(Application $application)
+    {
+        $this->appInstance = $application;
+        $this->jQueueBatchSize = $this->getJobQueueBatchSize();
+        $this->cacheLibrary = PageCache::getLibrary();
+
+        // If the job quite unexpectedly before, it'll not continue in the 'start' method
+        // Therefore we'll initialize it here, but then without the 2nd parameter (the max number of steps)
+        $this->progressBar = new ProgressBar($this->getOutput());
+        $this->progressBar->display();
+
+        parent::__construct();
+    }
 
     public function getJobName()
     {
-        $pkg = Package::getByHandle('cache_warmer');
-
-        return $pkg->getPackageName();
+        return t('Cache Warmer');
     }
 
     public function getJobDescription()
     {
-        $pkg = Package::getByHandle('cache_warmer');
-
-        return $pkg->getPackageDescription();
-    }
-
-    public function __construct()
-    {
-        $this->jQueueBatchSize = $this->getJobQueueBatchSize();
-        $this->cacheLibrary = PageCache::getLibrary();
+        return t('Generates cache files to reduce load times.');
     }
 
     /**
@@ -46,21 +67,35 @@ class CacheWarmer extends QueueableJob
      */
     public function start(ZendQueue $q)
     {
-        if (Core::isRunThroughCommandLineInterface()) {
-            $this->reset();
-            throw new \Exception(t("This job won't run via the CLI"));
+        if ($this->appInstance->isRunThroughCommandLineInterface()) {
+            /** @var \Concrete\Core\Entity\Site\Site|null $site */
+            $siteList = $this->appInstance->make('site')->getList();
+
+            if (count($siteList) !== 1) {
+                throw new Exception("The CLI modus can only be used if there's one site configured.");
+            }
+
+            if (empty($this->getCanonicalUrl())) {
+                throw new Exception("Please configure a canonical URL in order to run this job via CLI.");
+            }
         }
+
+        /** @var Repository $config */
+        $config = $this->appInstance->make(Repository::class);
 
         $pl = new PageList();
         $pl->sortBy('rand()');
         $pl->ignorePermissions();
 
+        /** @var PageTypes $pageTypes */
+        $pageTypes = $this->appInstance->make(PageTypes::class);
+
         /*
          * Filter by Page Type
          */
-        $page_type_handles = CacheWarmerController::getSelectedPageTypeHandles();
-        if (is_array($page_type_handles) && count($page_type_handles) > 0) {
-            $pl->filterByPageTypeHandle($page_type_handles);
+        $pageTypeHandles = $pageTypes->getSelectedPageTypeHandles();
+        if (count($pageTypeHandles)) {
+            $pl->filterByPageTypeHandle($pageTypeHandles);
         }
 
         /*
@@ -72,9 +107,9 @@ class CacheWarmer extends QueueableJob
          * Limit the number of pages per batch.
          * Default: 200.
          */
-        $max_pages = Config::get('cache_warmer.settings.max_pages');
-        $max_pages = $max_pages ? $max_pages : 200;
-        $pl->getQueryObject()->setMaxResults($max_pages);
+        $maxPages = $config->get('cache_warmer.settings.max_pages');
+        $maxPages = $maxPages ? $maxPages : 200;
+        $pl->getQueryObject()->setMaxResults($maxPages);
 
         /*
          * Get the raw SQL data.
@@ -84,6 +119,11 @@ class CacheWarmer extends QueueableJob
         foreach ($results as $row) {
             $q->send($row['cID']);
         }
+
+        if ($this->hasConsole()) {
+            $this->progressBar = new ProgressBar($this->getOutput(), count($results));
+            $this->progressBar->display();
+        }
     }
 
     /**
@@ -91,22 +131,35 @@ class CacheWarmer extends QueueableJob
      */
     public function processQueueItem(ZendQueueMessage $msg)
     {
+        /** @var Page $page */
         $page = Page::getByID($msg->body);
 
         if (!$page or $page->isError()) {
             return;
         }
 
+        if ($this->hasConsole()) {
+            $this->progressBar->advance();
+        }
+
         // Check if cache file already exists
-        if ($this->isCached($page)) {
+        try {
+            if ($this->isCached($page)) {
+                return;
+            }
+        } catch (Exception $e) {
+            $this->appInstance->make(Logger::class)->addError($e->getMessage());
             return;
         }
+
+        /** @var Repository $config */
+        $config = $this->appInstance->make(Repository::class);
 
         /*
          * 1. Check if cache is enabled when blocks on allow it.
          * 2. Check if the page uses the global settings (-1) or if it is set manually to block caching (1).
          */
-        if (Config::get('concrete.cache.pages') === 'block' && ($page->getCollectionFullPageCaching() == -1 || $page->getCollectionFullPageCaching() == 1)) {
+        if ($config->get('concrete.cache.pages') === 'block' && ($page->getCollectionFullPageCaching() == -1 || $page->getCollectionFullPageCaching() == 1)) {
             $blocks = $page->getBlocks();
             $blocks = array_merge($page->getGlobalBlocks(), $blocks);
 
@@ -121,25 +174,43 @@ class CacheWarmer extends QueueableJob
     }
 
     /**
+     * @param ZendQueue $q
+     *
+     * @return string
+     */
+    public function finish(ZendQueue $q)
+    {
+        $this->progressBar->clear();
+
+        return t('Cache Warmer completed');
+    }
+
+    public function getJobQueueBatchSize()
+    {
+        /** @var Repository $config */
+        $config = $this->appInstance->make(Repository::class);
+
+        $size = (int) $config->get('cache_warmer.settings.job_queue_batch');
+
+        return $size ? $size : 5;
+    }
+
+    /**
      * Checks if page is cached and whether cache file is still valid.
      *
      * @param \Concrete\Core\Page\Page $page
      *
      * @return bool
+     *
+     * @throws \ReflectionException
      */
-    protected function isCached($page)
+    private function isCached($page)
     {
-        $rec = $this->cacheLibrary->getRecord($page);
-        /** @var PageCacheRecord $rec  */
-        if ($rec instanceof PageCacheRecord) {
-            $validateFunction = new ReflectionMethod(PageCacheRecord::class, 'validate');
-            if ($validateFunction->getNumberOfRequiredParameters() === 0) {
-                // v5.7
-                $validated = $rec->validate();
-            } else {
-                // v8.x
-                $validated = $rec->validate(Core::make(\Concrete\Core\Http\Request::class));
-            }
+        $record = $this->cacheLibrary->getRecord($page);
+
+        /** @var PageCacheRecord $record  */
+        if ($record instanceof PageCacheRecord) {
+            $validated = $record->validate($this->appInstance->make(\Concrete\Core\Http\Request::class));
 
             return $validated;
         }
@@ -148,45 +219,58 @@ class CacheWarmer extends QueueableJob
     }
 
     /**
-     * Create cache file for $page.
+     * Regenerate the cache for a page
      *
-     * @param \Page $page
+     * @param Page $page
      */
-    protected function cachePage($page)
+    private function cachePage(Page $page)
     {
-        $fh = Core::make('helper/file');
-        $url = $page->getCollectionLink(true);
+        $url = $this->getUrlForPage($page);
 
         $urlParsed = @parse_url($url);
         if (!isset($urlParsed['scheme'])) {
             // An URL without scheme (e.g. '/' shouldn't be processed.
-            // getCollectionLink should always return a full URL.
             return;
         }
+
+        /** @var File $fh */
+        $fh = $this->appInstance->make('helper/file');
 
         // This is a C5 wrapper for cURL
         $pageContent = $fh->getContents($url);
 
         if (empty($pageContent)) {
             $msg = t(/* %s is the url of the page */"Page %s returned nothing. A cache file could probably not be created.", $url);
-            Log::addError($msg);
+            $this->appInstance->make(Logger::class)->addError($msg);
         }
     }
 
     /**
-     * @param ZendQueue $q
+     * Get the full URL of a page
+     *
+     * @param Page $page
      *
      * @return string
      */
-    public function finish(ZendQueue $q)
+    private function getUrlForPage(Page $page)
     {
-        return t("Cache Warmer completed");
+        return $page->getCollectionLink(true);
     }
 
-    public function getJobQueueBatchSize()
+    /**
+     * Get the canonical URL of the website
+     *
+     * When running via CLI, we don't have an active site
+     * in that case the default site is picked.
+     *
+     * @return string|null
+     */
+    private function getCanonicalUrl()
     {
-        $size = (int) Config::get('cache_warmer.settings.job_queue_batch');
+        $site = $this->appInstance->make('site')->getDefault();
 
-        return $size ? $size : 5;
+        $siteConfig = $site->getConfigRepository();
+
+        return $siteConfig->get('seo.canonical_url');
     }
 }
