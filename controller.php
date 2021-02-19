@@ -1,7 +1,6 @@
 <?php
 namespace Concrete\Package\CacheWarmer;
 
-use Exception;
 use Job;
 use Package;
 use Page;
@@ -11,7 +10,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.0.2';
+    protected $pkgVersion = '1.1';
 
     protected $single_pages = array(
         '/dashboard/system/optimization/cache_warmer' => array(
@@ -21,12 +20,12 @@ class Controller extends Package
 
     public function getPackageName()
     {
-        return t("Cache Warmer");
+        return t('Cache Warmer');
     }
 
     public function getPackageDescription()
     {
-        return t("Generates cache files to reduce load times.");
+        return t('Generates cache files to reduce load times.');
     }
 
     public function install()
@@ -48,6 +47,7 @@ class Controller extends Package
                 $path = $value;
                 $value = array();
             }
+
             $page = Page::getByPath($path);
             if (!$page || $page->isError()) {
                 $single_page = SinglePage::add($path, $pkg);

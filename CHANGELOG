@@ -1,0 +1,13 @@
+1.1:
+- v8 compatibility with PageCacheRecord class.
+- Code clean up.
+
+1.0.2:
+- Allow installation on PHP 7.
+
+1.0.1:
+- Added link on Settings page to Automated Jobs.
+- PSR fixes.
+
+1.0:
+- Approved by PRB.

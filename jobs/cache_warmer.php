@@ -11,6 +11,8 @@ use Package;
 use Page;
 use PageList;
 use QueueableJob;
+use ReflectionFunction;
+use ReflectionMethod;
 use ZendQueue\Message as ZendQueueMessage;
 use ZendQueue\Queue as ZendQueue;
 
@@ -58,8 +60,8 @@ class CacheWarmer extends QueueableJob
          * Check if cache is disabled globally.
          * If so, only retrieve pages that override the default cache setting.
          */
-        if (Config::get('concrete.cache.pages') == false) {
-            $pl->getQueryObject()->andWhere('p.cCacheFullPageContent = 1');
+        if (Config::get('concrete.cache.pages') === false) {
+            //$pl->getQueryObject()->andWhere('p.cCacheFullPageContent = 1');
         }
 
         /*
@@ -113,7 +115,7 @@ class CacheWarmer extends QueueableJob
          * 1. Check if cache is enabled when blocks on allow it.
          * 2. Check if the page uses the global settings (-1) or if it is set manually to block caching (1).
          */
-        if (Config::get('concrete.cache.pages') === 'block' && ($page->getCollectionFullPageCaching() == -1 or $page->getCollectionFullPageCaching() == 1)) {
+        if (Config::get('concrete.cache.pages') === 'block' && ($page->getCollectionFullPageCaching() == -1 || $page->getCollectionFullPageCaching() == 1)) {
             $blocks = $page->getBlocks();
             $blocks = array_merge($page->getGlobalBlocks(), $blocks);
 
@@ -137,10 +139,18 @@ class CacheWarmer extends QueueableJob
     protected function isCached($page)
     {
         $rec = $this->cacheLibrary->getRecord($page);
+        /** @var PageCacheRecord $rec  */
         if ($rec instanceof PageCacheRecord) {
-            if ($rec->validate()) {
-                return true;
+            $validateFunction = new ReflectionMethod(PageCacheRecord::class, 'validate');
+            if ($validateFunction->getNumberOfRequiredParameters() === 0) {
+                // v5.7
+                $validated = $rec->validate();
+            } else {
+                // v8.x
+                $validated = $rec->validate(Core::make(\Concrete\Core\Http\Request::class));
             }
+
+            return $validated;
         }
 
         return false;
