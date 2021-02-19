@@ -11,7 +11,7 @@ class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '5.7.4';
-    protected $pkgVersion = '1.2.1';
+    protected $pkgVersion = '1.2.2';
 
     public function getPackageName()
     {
