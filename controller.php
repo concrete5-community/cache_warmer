@@ -13,7 +13,7 @@ final class Controller extends Package
 {
     protected $pkgHandle = 'cache_warmer';
     protected $appVersionRequired = '8.3.1';
-    protected $pkgVersion = '2.1.3';
+    protected $pkgVersion = '2.1.4';
     protected $pkgAutoloaderRegistries = [
         'src/CacheWarmer' => '\A3020\CacheWarmer',
     ];

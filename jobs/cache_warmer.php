@@ -98,6 +98,11 @@ class CacheWarmer extends QueueableJob implements ConsoleAwareInterface
         $pl->sortBy('rand()');
         $pl->ignorePermissions();
 
+        if (method_exists($pl, 'setSiteTreeToAll')) {
+            // Let's include other languages as well.
+            $pl->setSiteTreeToAll();
+        }
+
         /** @var PageTypes $pageTypes */
         $pageTypes = $this->appInstance->make(PageTypes::class);
 
