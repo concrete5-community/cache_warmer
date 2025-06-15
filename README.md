@@ -46,7 +46,7 @@ To create the cache files, Cache Warmer basically visits your pages one by one. 
 For small websites, you can run the Job by hand via **Dashboard / Systems & Settings / Optimization / Automated Jobs**. Once you hit the 'Run' button, a popup will appear. While the popup is visible, concrete5 will send various requests to keep the Job going. For each request, Cache Warmer will generate cache files for five pages.
 
 **CLI command**  
-The preferred way to run Cache Warmer is via the command line interface. Run it via ````./concrete/bin/concrete5 c5:job cache\_warmer````  
+The preferred way to run Cache Warmer is via the command line interface. Run it via ````./concrete/bin/concrete5 c5:job cache_warmer````  
   
 **Cron job**  
 You can automate the Jobs by **scheduling** them. I recommend using a **cron job** for this. If your server doesn't support that, concrete5 can trigger the Job automatically when a someone visits your website.
